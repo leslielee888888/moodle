@@ -77,14 +77,13 @@ function CourseCard({
       linkLabel: htmlToText(strings.continuelearning),
       linkHref: viewurl,
       className: "w-100 h-100",
-      role: "listitem",
       ...hookAttributes
     },
     void 0,
     false,
     {
       fileName: "public/course/js/esm/src/CourseCard.tsx",
-      lineNumber: 182,
+      lineNumber: 184,
       columnNumber: 5
     },
     this

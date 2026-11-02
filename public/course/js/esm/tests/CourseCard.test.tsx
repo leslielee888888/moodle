@@ -217,14 +217,14 @@ describe("CourseCard (Course card wrapper)", () => {
     expect(image).toHaveAttribute("alt", "");
   });
 
-  // NOTE: an upcoming change may move `role="listitem"` from the card root to a grid-cell
-  // wrapper around it. Keep this assertion isolated in this one test so it is trivial to
-  // update in isolation when that happens.
-  it("sets data-region, data-course-id and the list-item role on the card root", () => {
+  // The list-item role lives on the grid cell in the template, not on the card: an article
+  // element cannot take it (axe rule aria-allowed-role).
+  it("sets data-region and data-course-id on the card root, and no list-item role", () => {
     render(<CourseCard {...buildProps({id: 123})} />);
-    const card = screen.getByRole("listitem");
+    const card = screen.getByRole("article");
     expect(card).toHaveAttribute("data-region", "course-content");
     expect(card).toHaveAttribute("data-course-id", "123");
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
 
   it("omits elements for missing strings instead of throwing", () => {

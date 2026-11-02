@@ -121,8 +121,10 @@ function getSubtitle({
  * Render a course as an MDS course card.
  *
  * Wires up the title, subtitle, hidden badge, progress bar, the (decorative) image, the footer
- * link, and the `data-region`/`data-course-id`/`role` hooks the existing JS and Behat tests rely
- * on. The action menu and favourite star are intentionally omitted (out of scope; see issue #1).
+ * link, and the `data-region`/`data-course-id` hooks the existing JS and Behat tests rely on. The
+ * list-item role is not set here: an `article` cannot take it, so the grid cell wrapping the card
+ * in block_myoverview/view-cards-mds.mustache carries it instead. The action menu and favourite
+ * star are intentionally omitted (out of scope; see issue #1).
  *
  * Each of the subtitle, badge and progress bar is driven by a translated string: when that
  * string is missing from `strings`, the corresponding prop on the design-system card resolves to
@@ -195,7 +197,6 @@ export default function CourseCard({
       // turn, since the mount div is a plain box whose height does not cascade down on its own.
       // Neither class duplicates the other.
       className="w-100 h-100"
-      role="listitem"
       {...hookAttributes}
     />
   );

@@ -26,7 +26,7 @@
 
     The core fields are wired up: title, image, subtitle (category or short name), the hidden
     badge, the progress bar, the "Continue learning" footer link, and the
-    data-region/data-course-id/role hooks. The action menu and favourite star are intentionally
+    data-region/data-course-id hooks. The list-item role sits on the grid cell around each card, since an article element cannot take it. The action menu and favourite star are intentionally
     dropped (see GitHub issue #1).
 
     Each React mount point's fallback content is a Course card skeleton (see GitHub issue #5
@@ -68,7 +68,7 @@
 <span class="visually-hidden">{{#str}} loading {{/str}}</span>
 <div class="card-grid row gx-2 row-cols-1 row-cols-sm-2 row-cols-lg-3" data-region="card-deck" role="list">
 {{#courses}}
-    <div class="col d-flex mb-2">
+    <div class="col d-flex mb-2" role="listitem">
         {{! The mount div's "w-100" fills the width of this flex row (only height stretches
             automatically here); the card's own "w-100 h-100" then fills the mount div, which is a
             plain box so height does not cascade down to it on its own. Neither class is
