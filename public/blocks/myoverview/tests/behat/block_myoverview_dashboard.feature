@@ -71,6 +71,11 @@ Feature: The my overview block allows users to easily access their courses
     And I should see "Course 4" in the "Course overview" "block"
     And I should see "Course 5" in the "Course overview" "block"
     And the "Course overview" "block" should meet accessibility standards with "best-practice" extra tests
+    # Each course card's footer link must have a unique accessible name: the visible "Continue
+    # learning" label followed by the course title (GitHub issue #13), not just "Continue learning"
+    # for every card.
+    And "//a[@aria-label='Continue learning: Course 2']" "xpath_element" should exist
+    And "//a[@aria-label='Continue learning: Course 3']" "xpath_element" should exist
 
   Scenario: View all (including removed from view) courses
     Given the following config values are set as admin:

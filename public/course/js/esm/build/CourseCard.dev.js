@@ -10,6 +10,7 @@ import { jsxDEV } from "react/jsx-dev-runtime";
  * @copyright  2026 Leslie Lee <leslielee888888@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+import { useEffect, useRef } from "react";
 import { CourseCard as MdsCourseCard } from "@moodlehq/design-system";
 function htmlToText(html) {
   if (html === void 0) {
@@ -63,9 +64,21 @@ function CourseCard({
   const badgeLabel = !visible ? htmlToText(strings.hiddenfromstudents) : void 0;
   const progressLabel = hasprogress ? htmlToText(strings.completepercent) : void 0;
   const progressValue = progress ?? void 0;
+  const plainLinkLabel = htmlToText(strings.continuelearning);
+  const cardRef = useRef(null);
+  useEffect(() => {
+    const link = cardRef.current?.querySelector("a.mds-link");
+    if (!link || !plainLinkLabel) {
+      return void 0;
+    }
+    link.setAttribute("aria-label", `${plainLinkLabel}: ${plainFullname}`);
+    return () => link.removeAttribute("aria-label");
+  }, [plainLinkLabel, plainFullname, viewurl]);
   return /* @__PURE__ */ jsxDEV(
     MdsCourseCard,
     {
+      ref: cardRef,
+      "aria-label": plainFullname,
       title: plainFullname,
       headingLevel: 3,
       subtitle,
@@ -74,7 +87,7 @@ function CourseCard({
       badgeLabel,
       progressLabel,
       progressValue,
-      linkLabel: htmlToText(strings.continuelearning),
+      linkLabel: plainLinkLabel,
       linkHref: viewurl,
       className: "w-100 h-100",
       ...hookAttributes
@@ -83,7 +96,7 @@ function CourseCard({
     false,
     {
       fileName: "public/course/js/esm/src/CourseCard.tsx",
-      lineNumber: 184,
+      lineNumber: 200,
       columnNumber: 5
     },
     this
