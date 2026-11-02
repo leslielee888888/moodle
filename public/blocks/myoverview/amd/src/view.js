@@ -36,10 +36,32 @@ import {setUserPreference} from 'core_user/repository';
 
 const TEMPLATES = {
     COURSES_CARDS: 'block_myoverview/view-cards',
+    COURSES_CARDS_MDS: 'block_myoverview/view-cards-mds',
     COURSES_LIST: 'block_myoverview/view-list',
     COURSES_SUMMARY: 'block_myoverview/view-summary',
     NOCOURSES: 'core_course/no-courses'
 };
+
+/**
+ * The name of the cookie that switches the cards view to the MDS course card.
+ *
+ * Proof of concept (see GitHub issues #1 and #3): there is no UI for this, the cookie is set by
+ * hand. Easily removed by deleting this check and the COURSES_CARDS_MDS branch in
+ * renderCourses() once the POC is reverted or promoted.
+ *
+ * @type {string}
+ */
+const MDS_COURSECARD_COOKIE = 'mds_coursecard';
+
+/**
+ * Whether the MDS course card cookie switch is turned on.
+ *
+ * @return {Boolean} True when the mds_coursecard cookie is set to "1".
+ */
+const isMdsCourseCardEnabled = () => document.cookie
+    .split(';')
+    .map(part => part.trim())
+    .includes(`${MDS_COURSECARD_COOKIE}=1`);
 
 const GROUPINGS = {
     GROUPING_ALLINCLUDINGHIDDEN: 'allincludinghidden',
@@ -497,7 +519,7 @@ const renderCourses = (root, coursesData) => {
 
     let currentTemplate = '';
     if (filters.display === 'card') {
-        currentTemplate = TEMPLATES.COURSES_CARDS;
+        currentTemplate = isMdsCourseCardEnabled() ? TEMPLATES.COURSES_CARDS_MDS : TEMPLATES.COURSES_CARDS;
     } else if (filters.display === 'list') {
         currentTemplate = TEMPLATES.COURSES_LIST;
     } else {

@@ -6,5 +6,9 @@
   "ActivityDates": {
     "eject": "risky",
     "wrap": "risky"
+  },
+  "CourseCard": {
+    "eject": "risky",
+    "wrap": "risky"
   }
 }
