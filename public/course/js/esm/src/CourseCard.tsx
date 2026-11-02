@@ -148,6 +148,7 @@ export default function CourseCard({
       progressValue={progressValue}
       linkLabel={strings.continuelearning}
       linkHref={viewurl}
+      className="w-100 h-100"
       role="listitem"
       {...hookAttributes}
     />

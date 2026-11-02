@@ -65,6 +65,7 @@ function CourseCard({
       progressValue,
       linkLabel: strings.continuelearning,
       linkHref: viewurl,
+      className: "w-100 h-100",
       role: "listitem",
       ...hookAttributes
     },
@@ -72,7 +73,7 @@ function CourseCard({
     false,
     {
       fileName: "public/course/js/esm/src/CourseCard.tsx",
-      lineNumber: 138,
+      lineNumber: 141,
       columnNumber: 5
     },
     this
