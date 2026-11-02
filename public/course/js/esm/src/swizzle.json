@@ -10,5 +10,9 @@
   "CourseCard": {
     "eject": "risky",
     "wrap": "risky"
+  },
+  "CourseCardList": {
+    "eject": "risky",
+    "wrap": "risky"
   }
 }

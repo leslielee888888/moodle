@@ -23,6 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import { useEffect, useRef } from "react";
 import { CourseCard as MdsCourseCard } from "@moodlehq/design-system";
 
 export interface CourseCardProps {
@@ -179,9 +180,26 @@ export default function CourseCard({
   // would be redundant; `progress ?? undefined` covers both "no progress" (null) and "not
   // tracked" (false).
   const progressValue = progress ?? undefined;
+  const plainLinkLabel = htmlToText(strings.continuelearning);
+
+  // The MDS card renders its footer link internally and accepts no per-link ARIA props, so every
+  // card would be announced as just "Continue learning". Give each link a unique accessible name
+  // that starts with its visible label (WCAG 2.5.3) and ends with the course title (WCAG 2.4.4).
+  // MDS is deliberately not modified in this proof of concept (see GitHub issue #13).
+  const cardRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const link = cardRef.current?.querySelector<HTMLAnchorElement>("a.mds-link");
+    if (!link || !plainLinkLabel) {
+      return undefined;
+    }
+    link.setAttribute("aria-label", `${plainLinkLabel}: ${plainFullname}`);
+    return () => link.removeAttribute("aria-label");
+  }, [plainLinkLabel, plainFullname, viewurl]);
 
   return (
     <MdsCourseCard
+      ref={cardRef}
+      aria-label={plainFullname}
       title={plainFullname}
       headingLevel={3}
       subtitle={subtitle}
@@ -190,7 +208,7 @@ export default function CourseCard({
       badgeLabel={badgeLabel}
       progressLabel={progressLabel}
       progressValue={progressValue}
-      linkLabel={htmlToText(strings.continuelearning)}
+      linkLabel={plainLinkLabel}
       linkHref={viewurl}
       // The mount div (block_myoverview/view-cards-mds.mustache) sets "w-100" to fill the width
       // of its flex row; this card then needs its own "w-100 h-100" to fill that mount div in

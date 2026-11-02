@@ -25,8 +25,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {render, screen} from "@testing-library/react";
-import CourseCard, {CourseCardProps} from "../src/CourseCard";
+import { render, screen } from "@testing-library/react";
+import CourseCard, { CourseCardProps } from "../src/CourseCard";
 
 /**
  * Build props for the Course card wrapper, overriding only what a test cares about.
@@ -60,7 +60,7 @@ describe("CourseCard (Course card wrapper)", () => {
   it("renders the full name as a level-3 heading, decoding HTML entities and stripping tags", () => {
     render(
       <CourseCard
-        {...buildProps({fullname: "Intro to <b>Testing</b> &amp; Design"})}
+        {...buildProps({ fullname: "Intro to <b>Testing</b> &amp; Design" })}
       />,
     );
     expect(
@@ -121,7 +121,7 @@ describe("CourseCard (Course card wrapper)", () => {
       <CourseCard
         {...buildProps({
           visible: false,
-          strings: {hiddenfromstudents: "Hidden &amp; <b>not visible</b>"},
+          strings: { hiddenfromstudents: "Hidden &amp; <b>not visible</b>" },
         })}
       />,
     );
@@ -133,7 +133,7 @@ describe("CourseCard (Course card wrapper)", () => {
       <CourseCard
         {...buildProps({
           visible: true,
-          strings: {hiddenfromstudents: "Hidden from students"},
+          strings: { hiddenfromstudents: "Hidden from students" },
         })}
       />,
     );
@@ -146,7 +146,7 @@ describe("CourseCard (Course card wrapper)", () => {
         {...buildProps({
           hasprogress: true,
           progress: 45,
-          strings: {completepercent: "45% complete"},
+          strings: { completepercent: "45% complete" },
         })}
       />,
     );
@@ -160,7 +160,7 @@ describe("CourseCard (Course card wrapper)", () => {
         {...buildProps({
           hasprogress: true,
           progress: null,
-          strings: {completepercent: "0% complete"},
+          strings: { completepercent: "0% complete" },
         })}
       />,
     );
@@ -174,7 +174,7 @@ describe("CourseCard (Course card wrapper)", () => {
         {...buildProps({
           hasprogress: false,
           progress: null,
-          strings: {completepercent: "45% complete"},
+          strings: { completepercent: "45% complete" },
         })}
       />,
     );
@@ -187,11 +187,14 @@ describe("CourseCard (Course card wrapper)", () => {
       <CourseCard
         {...buildProps({
           viewurl: "https://example.com/course/view.php?id=99",
-          strings: {continuelearning: "Continue learning"},
+          strings: { continuelearning: "Continue learning" },
         })}
       />,
     );
-    const link = screen.getByRole("link", {name: "Continue learning"});
+    const link = screen.getByRole("link", {
+      name: "Continue learning: Introduction to Testing",
+    });
+    expect(link).toHaveTextContent("Continue learning");
     expect(link).toHaveAttribute(
       "href",
       "https://example.com/course/view.php?id=99",
@@ -199,7 +202,7 @@ describe("CourseCard (Course card wrapper)", () => {
   });
 
   it("renders the course image with empty alt text", () => {
-    const {container} = render(
+    const { container } = render(
       <CourseCard
         {...buildProps({
           courseimage: "https://example.com/course/image.php?id=42",
@@ -220,11 +223,81 @@ describe("CourseCard (Course card wrapper)", () => {
   // The list-item role lives on the grid cell in the template, not on the card: an article
   // element cannot take it (axe rule aria-allowed-role).
   it("sets data-region and data-course-id on the card root, and no list-item role", () => {
-    render(<CourseCard {...buildProps({id: 123})} />);
+    render(<CourseCard {...buildProps({ id: 123 })} />);
     const card = screen.getByRole("article");
     expect(card).toHaveAttribute("data-region", "course-content");
     expect(card).toHaveAttribute("data-course-id", "123");
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+  });
+
+  describe("accessible names (GitHub issue #13)", () => {
+    it("names the article by the course title", () => {
+      render(<CourseCard {...buildProps()} />);
+      expect(
+        screen.getByRole("article", { name: "Introduction to Testing" }),
+      ).toBeInTheDocument();
+    });
+
+    it("names the footer link with the label followed by the course title, keeping the visible text", () => {
+      render(<CourseCard {...buildProps()} />);
+      const link = screen.getByRole("link", {
+        name: "Continue learning: Introduction to Testing",
+      });
+      expect(link).toHaveTextContent("Continue learning");
+    });
+
+    it("gives two cards with different titles different link names", () => {
+      render(
+        <>
+          <CourseCard {...buildProps({ id: 1, fullname: "Biology" })} />
+          <CourseCard {...buildProps({ id: 2, fullname: "Chemistry" })} />
+        </>,
+      );
+      const names = screen
+        .getAllByRole("link")
+        .map((link) => link.getAttribute("aria-label"));
+      expect(names).toEqual([
+        "Continue learning: Biology",
+        "Continue learning: Chemistry",
+      ]);
+    });
+
+    it("uses plain text in the names when the title has entities or markup", () => {
+      render(
+        <CourseCard
+          {...buildProps({ fullname: "Intro to <b>Testing</b> &amp; Design" })}
+        />,
+      );
+      expect(
+        screen.getByRole("link", {
+          name: "Continue learning: Intro to Testing & Design",
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("updates the link name when the title changes", () => {
+      const { rerender } = render(
+        <CourseCard {...buildProps({ fullname: "Biology" })} />,
+      );
+      rerender(<CourseCard {...buildProps({ fullname: "Chemistry" })} />);
+      expect(
+        screen.getByRole("link", { name: "Continue learning: Chemistry" }),
+      ).toBeInTheDocument();
+    });
+
+    it("does not throw and renders no link name when the link is not rendered (missing string)", () => {
+      expect(() =>
+        render(<CourseCard {...buildProps({ strings: {} })} />),
+      ).not.toThrow();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    });
+
+    it("does not throw and renders no link name when the link is not rendered (missing view URL)", () => {
+      expect(() =>
+        render(<CourseCard {...buildProps({ viewurl: "" })} />),
+      ).not.toThrow();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    });
   });
 
   it("omits elements for missing strings instead of throwing", () => {
