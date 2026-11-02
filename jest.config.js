@@ -37,6 +37,11 @@ module.exports = {
         // fast, single-file transpile with no type-checking/project resolution, since this is
         // pre-built vendor code, not our own source. See the matching transformIgnorePatterns
         // override below, which is what lets this transform reach into node_modules for it.
+        //
+        // This also covers the vendored core/mustache engine (public/lib/amd/src/mustache.js),
+        // another plain-ESM .js file: its "export default mustache;" ends up on the compiled
+        // module's `default` property (see block_myoverview/tests/view-cards-mds.test.ts, which
+        // unwraps that with the usual esModuleInterop fallback).
         '^.+\\.js$': ['ts-jest', {
             isolatedModules: true,
             tsconfig: {
