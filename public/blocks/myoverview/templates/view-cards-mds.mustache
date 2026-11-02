@@ -24,9 +24,10 @@
     card wrapper (core_course/CourseCard, an adapter onto the design system's CourseCard) for
     each course instead of the existing core_course/coursecard template.
 
-    Only the core fields are wired up (title, image, the "Continue learning" footer link, and the
-    data-region/data-course-id/role hooks); the subtitle, hidden badge and progress bar are left
-    for a later ticket. The action menu and favourite star are intentionally dropped.
+    The core fields are wired up: title, image, subtitle (category or short name), the hidden
+    badge, the progress bar, the "Continue learning" footer link, and the
+    data-region/data-course-id/role hooks. The action menu and favourite star are intentionally
+    dropped (see GitHub issue #1).
 
     Example context (json):
     {
@@ -66,7 +67,9 @@
                 "showcoursecategory": {{#showcoursecategory}}true{{/showcoursecategory}}{{^showcoursecategory}}false{{/showcoursecategory}},
                 "showshortname": {{#showshortname}}true{{/showshortname}}{{^showshortname}}false{{/showshortname}},
                 "strings": {
-                    "continuelearning": {{#quote}}{{#str}}continuelearning, block_myoverview{{/str}}{{/quote}}
+                    "continuelearning": {{#quote}}{{#str}}continuelearning, block_myoverview{{/str}}{{/quote}},
+                    "hiddenfromstudents": {{#visible}}null{{/visible}}{{^visible}}{{#quote}}{{#str}}hiddenfromstudents{{/str}}{{/quote}}{{/visible}},
+                    "completepercent": {{^hasprogress}}null{{/hasprogress}}{{#hasprogress}}{{#quote}}{{#str}}completepercent, block_myoverview, {{progress}}{{/str}}{{/quote}}{{/hasprogress}}
                 }
             }
         }
