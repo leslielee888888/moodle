@@ -1,6 +1,8 @@
 /* Hide the first dropdown-divider if no filter option element is listed before it.
    This can happen for some subset configurations of the block_myoverview course filter. */
-.block_myoverview button#groupingdropdown + .dropdown-menu li:first-of-type.dropdown-divider:first-of-type {
+.block_myoverview
+button#groupingdropdown + .dropdown-menu
+li:first-of-type.dropdown-divider:first-of-type {
     display: none;
 }
 .block_myoverview .whitebutton .btn-secondary {
@@ -11,4 +13,106 @@
 
 .page-mycourses .block_myoverview .block-controls {
     display: none;
+}
+
+/*
+ * Course card skeleton (MDS variant only, My courses cards view, see GitHub issue #5).
+ *
+ * Shown as the fallback content of the {{#react}} mount point in
+ * block_myoverview/view-cards-mds until the Course card wrapper mounts and replaces it, so the
+ * geometry below mirrors the MDS course card (lib/bundles/design-system/js/components/course-card)
+ * using the same MDS tokens, to avoid a visible layout jump. This file (rather than theme_boost's
+ * scss) is where the rule lives because it is plain CSS that Moodle's plugin CSS aggregation picks
+ * up directly - no grunt scss build is needed to see it, which matters since grunt refuses to run
+ * on this environment's Node version.
+ */
+.block_myoverview .mds-course-card-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mds-spacing-md);
+    padding: var(--mds-spacing-md);
+    background-color: var(--mds-bg-surface-default);
+    border: var(--mds-stroke-weight-sm) solid var(--mds-border-default);
+    border-radius: var(--mds-border-radius-md);
+}
+
+.block_myoverview .mds-course-card-skeleton-image {
+    /* Matches .mds-course-card-image: Figma defines the image frame as 253.67 x 181. */
+    aspect-ratio: 1.4;
+    border-radius: var(--mds-border-radius-sm);
+}
+
+.block_myoverview .mds-course-card-skeleton-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mds-spacing-xl);
+}
+
+.block_myoverview .mds-course-card-skeleton-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mds-spacing-xs);
+}
+
+.block_myoverview .mds-course-card-skeleton-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mds-spacing-xxs);
+}
+
+.block_myoverview .mds-course-card-skeleton-line {
+    border-radius: var(--mds-border-radius-sm);
+}
+
+.block_myoverview .mds-course-card-skeleton-title {
+    /* Matches .mds-course-card-title's line-height (one title line, untruncated). */
+    width: 70%;
+    height: var(--mds-line-height-headings-6);
+}
+
+.block_myoverview .mds-course-card-skeleton-subtitle {
+    /* Matches .mds-course-card-subtitle's line-height. */
+    width: 45%;
+    height: var(--mds-line-height-paragraph-small);
+}
+
+.block_myoverview .mds-course-card-skeleton-progress {
+    /* Matches the MDS progress bar track: 0.375rem (6px) has no token by design, see
+       lib/bundles/design-system/js/components/progress-bar/index.css. */
+    height: 0.375rem;
+    border-radius: var(--mds-border-radius-pill);
+}
+
+.block_myoverview .mds-course-card-skeleton-link {
+    /* Matches the footer link's line-height. */
+    width: 40%;
+    height: var(--mds-line-height-paragraph-xs);
+}
+
+.block_myoverview .mds-course-card-skeleton-image,
+.block_myoverview .mds-course-card-skeleton-line {
+    animation: mds-course-card-skeleton-pulse 2s infinite linear;
+}
+
+@keyframes mds-course-card-skeleton-pulse {
+    0% {
+        background-color: var(--mds-bg-surface-subtle);
+    }
+
+    50% {
+        background-color: var(--mds-bg-surface-strong);
+    }
+
+    100% {
+        background-color: var(--mds-bg-surface-subtle);
+    }
+}
+
+/* Users who prefer reduced motion get a static skeleton instead of the pulse animation. */
+@media (prefers-reduced-motion: reduce) {
+    .block_myoverview .mds-course-card-skeleton-image,
+    .block_myoverview .mds-course-card-skeleton-line {
+        animation: none;
+        background-color: var(--mds-bg-surface-strong);
+    }
 }
