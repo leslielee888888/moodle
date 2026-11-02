@@ -11,6 +11,13 @@ import { jsxDEV } from "react/jsx-dev-runtime";
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 import { CourseCard as MdsCourseCard } from "@moodlehq/design-system";
+function htmlToText(html) {
+  if (html === void 0) {
+    return void 0;
+  }
+  return new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
+}
+__name(htmlToText, "htmlToText");
 function getSubtitle({
   showcoursecategory,
   coursecategory,
@@ -44,26 +51,30 @@ function CourseCard({
     "data-region": "course-content",
     "data-course-id": id
   };
+  const plainFullname = htmlToText(fullname);
+  const plainShortname = htmlToText(shortname);
+  const plainCategory = htmlToText(coursecategory);
   const subtitle = getSubtitle({
     showcoursecategory,
-    coursecategory,
+    coursecategory: plainCategory,
     showshortname,
-    shortname
+    shortname: plainShortname
   });
-  const badgeLabel = !visible ? strings.hiddenfromstudents : void 0;
-  const progressLabel = hasprogress ? strings.completepercent : void 0;
-  const progressValue = hasprogress && progress !== null ? progress : void 0;
+  const badgeLabel = !visible ? htmlToText(strings.hiddenfromstudents) : void 0;
+  const progressLabel = hasprogress ? htmlToText(strings.completepercent) : void 0;
+  const progressValue = progress ?? void 0;
   return /* @__PURE__ */ jsxDEV(
     MdsCourseCard,
     {
-      title: fullname,
+      title: plainFullname,
+      headingLevel: 3,
       subtitle,
       imageSrc: courseimage,
       imageAlt: "",
       badgeLabel,
       progressLabel,
       progressValue,
-      linkLabel: strings.continuelearning,
+      linkLabel: htmlToText(strings.continuelearning),
       linkHref: viewurl,
       className: "w-100 h-100",
       role: "listitem",
@@ -73,7 +84,7 @@ function CourseCard({
     false,
     {
       fileName: "public/course/js/esm/src/CourseCard.tsx",
-      lineNumber: 141,
+      lineNumber: 182,
       columnNumber: 5
     },
     this

@@ -43,25 +43,27 @@ const TEMPLATES = {
 };
 
 /**
- * The name of the cookie that switches the cards view to the MDS course card.
+ * The name of the cookie that switches the cards view back to the legacy Course card.
  *
- * Proof of concept (see GitHub issues #1 and #3): there is no UI for this, the cookie is set by
- * hand. Easily removed by deleting this check and the COURSES_CARDS_MDS branch in
- * renderCourses() once the POC is reverted or promoted.
+ * Proof of concept (see GitHub issues #1 and #3): the MDS course card is the default; there is no
+ * UI for this cookie, it is set by hand to opt back into the legacy card. Easily removed by
+ * deleting this check and the COURSES_CARDS branch in renderCourses() once the POC is reverted or
+ * promoted.
  *
  * @type {string}
  */
 const MDS_COURSECARD_COOKIE = 'mds_coursecard';
 
 /**
- * Whether the MDS course card cookie switch is turned on.
+ * Whether the MDS course card cookie switch is turned off.
  *
- * @return {Boolean} True when the mds_coursecard cookie is set to "1".
+ * @return {Boolean} True when the mds_coursecard cookie is set to exactly "0". Any other value,
+ * including the cookie being absent, leaves the MDS course card on.
  */
-const isMdsCourseCardEnabled = () => document.cookie
+const isMdsCourseCardDisabled = () => document.cookie
     .split(';')
     .map(part => part.trim())
-    .includes(`${MDS_COURSECARD_COOKIE}=1`);
+    .includes(`${MDS_COURSECARD_COOKIE}=0`);
 
 const GROUPINGS = {
     GROUPING_ALLINCLUDINGHIDDEN: 'allincludinghidden',
@@ -519,7 +521,7 @@ const renderCourses = (root, coursesData) => {
 
     let currentTemplate = '';
     if (filters.display === 'card') {
-        currentTemplate = isMdsCourseCardEnabled() ? TEMPLATES.COURSES_CARDS_MDS : TEMPLATES.COURSES_CARDS;
+        currentTemplate = isMdsCourseCardDisabled() ? TEMPLATES.COURSES_CARDS : TEMPLATES.COURSES_CARDS_MDS;
     } else if (filters.display === 'list') {
         currentTemplate = TEMPLATES.COURSES_LIST;
     } else {

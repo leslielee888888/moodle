@@ -66,6 +66,33 @@ export interface CourseCardProps {
 }
 
 /**
+ * Convert HTML-formatted text (as produced by Moodle's exporters and `{{#str}}`) to plain text.
+ *
+ * React renders string props as text, not HTML, so passing an HTML-formatted string straight
+ * through would show literal entities (e.g. `&amp;`) and any tags rather than the text they
+ * represent. This decodes entities and strips tags by parsing the string as a document fragment
+ * and reading its `textContent`. `DOMParser` never executes scripts or other side-effecting
+ * content it parses (unlike assigning to `innerHTML` on the live document), so this is safe
+ * against script injection even though the input is untrusted HTML.
+ *
+ * A missing string (`undefined`) is passed through unchanged so callers can still rely on it to
+ * omit the element that needs it, per the "missing string" contract on {@link CourseCardProps}.
+ *
+ * @param html HTML-formatted text, or undefined when the string is missing.
+ * @returns The plain-text content, or undefined when the input was undefined.
+ */
+function htmlToText(html: string): string;
+function htmlToText(html: string | undefined): string | undefined;
+function htmlToText(html: string | undefined): string | undefined {
+  if (html === undefined) {
+    return undefined;
+  }
+  return (
+    new DOMParser().parseFromString(html, "text/html").body.textContent ?? ""
+  );
+}
+
+/**
  * The subtitle shown beneath the title: the category when categories are shown, otherwise the
  * short name when short names are shown, otherwise none.
  *
@@ -127,27 +154,46 @@ export default function CourseCard({
     "data-course-id": id,
   };
 
+  // `fullname`, `shortname` and `coursecategory` are HTML-formatted text from the course
+  // exporter; decode them to plain text before they reach any prop below (see htmlToText).
+  const plainFullname = htmlToText(fullname);
+  const plainShortname = htmlToText(shortname);
+  const plainCategory = htmlToText(coursecategory);
+
   const subtitle = getSubtitle({
     showcoursecategory,
-    coursecategory,
+    coursecategory: plainCategory,
     showshortname,
-    shortname,
+    shortname: plainShortname,
   });
-  const badgeLabel = !visible ? strings.hiddenfromstudents : undefined;
-  const progressLabel = hasprogress ? strings.completepercent : undefined;
-  const progressValue = hasprogress && progress !== null ? progress : undefined;
+  const badgeLabel = !visible
+    ? htmlToText(strings.hiddenfromstudents)
+    : undefined;
+  const progressLabel = hasprogress
+    ? htmlToText(strings.completepercent)
+    : undefined;
+  // `progressValue` is only ever rendered by the design-system card when `progressLabel` is
+  // also set (which is already gated on `hasprogress` above), so the `hasprogress` check here
+  // would be redundant; `progress ?? undefined` covers both "no progress" (null) and "not
+  // tracked" (false).
+  const progressValue = progress ?? undefined;
 
   return (
     <MdsCourseCard
-      title={fullname}
+      title={plainFullname}
+      headingLevel={3}
       subtitle={subtitle}
       imageSrc={courseimage}
       imageAlt=""
       badgeLabel={badgeLabel}
       progressLabel={progressLabel}
       progressValue={progressValue}
-      linkLabel={strings.continuelearning}
+      linkLabel={htmlToText(strings.continuelearning)}
       linkHref={viewurl}
+      // The mount div (block_myoverview/view-cards-mds.mustache) sets "w-100" to fill the width
+      // of its flex row; this card then needs its own "w-100 h-100" to fill that mount div in
+      // turn, since the mount div is a plain box whose height does not cascade down on its own.
+      // Neither class duplicates the other.
       className="w-100 h-100"
       role="listitem"
       {...hookAttributes}

@@ -17,9 +17,9 @@
 {{!
     @template block_myoverview/view-cards-mds
 
-    MDS course card variant of the cards view for the myoverview block. This is a proof of
-    concept (see GitHub issues #1 and #3): block_myoverview/view.js picks this template instead
-    of block_myoverview/view-cards when the mds_coursecard cookie is "1". It keeps the same
+    MDS course card variant of the cards view for the myoverview block. This is the default cards
+    view (see GitHub issues #1 and #3): block_myoverview/view.js picks block_myoverview/view-cards
+    instead of this template only when the mds_coursecard cookie is exactly "0". It keeps the same
     Bootstrap grid and card-deck region as block_myoverview/view-cards, but mounts the Course
     card wrapper (core_course/CourseCard, an adapter onto the design system's CourseCard) for
     each course instead of the existing core_course/coursecard template.
@@ -30,7 +30,7 @@
     dropped (see GitHub issue #1).
 
     Each {{#react}} mount point's fallback content is a Course card skeleton (see GitHub issue #5
-    and docs/GLOSSARY.md), shown until the Course card wrapper mounts and replaces it. It is
+    and GLOSSARY.md), shown until the Course card wrapper mounts and replaces it. It is
     aria-hidden, and a visually hidden loading message immediately precedes the grid instead.
 
     Example context (json):
@@ -48,6 +48,19 @@
                 "showcoursecategory": true,
                 "showshortname": false,
                 "visible": true
+            },
+            {
+                "id": 3,
+                "viewurl": "https://moodlesite/course/view.php?id=3",
+                "courseimage": "https://moodlesite/pluginfile/124/course/overviewfiles/124.jpg",
+                "fullname": "Introduction to Hidden Courses",
+                "shortname": "hidden1",
+                "hasprogress": false,
+                "progress": null,
+                "coursecategory": "Category 2",
+                "showcoursecategory": true,
+                "showshortname": false,
+                "visible": false
             }
         ]
     }
@@ -56,6 +69,10 @@
 <div class="card-grid row gx-2 row-cols-1 row-cols-sm-2 row-cols-lg-3" data-region="card-deck" role="list">
 {{#courses}}
     <div class="col d-flex mb-2">
+        {{! The mount div's "w-100" fills the width of this flex row (only height stretches
+            automatically here); the card's own "w-100 h-100" then fills the mount div, which is a
+            plain box so height does not cascade down to it on its own. Neither class is
+            redundant with the other. }}
         {{#react}}
         {
             "component": "@moodle/lms/core_course/CourseCard",
@@ -67,7 +84,7 @@
                 "viewurl": {{#quote}}{{{viewurl}}}{{/quote}},
                 "courseimage": {{#quote}}{{{courseimage}}}{{/quote}},
                 "hasprogress": {{#hasprogress}}true{{/hasprogress}}{{^hasprogress}}false{{/hasprogress}},
-                "progress": {{^hasprogress}}null{{/hasprogress}}{{#hasprogress}}{{progress}}{{/hasprogress}},
+                "progress": {{^hasprogress}}null{{/hasprogress}}{{#hasprogress}}{{^progress}}0{{/progress}}{{#progress}}{{progress}}{{/progress}}{{/hasprogress}},
                 "visible": {{#visible}}true{{/visible}}{{^visible}}false{{/visible}},
                 "coursecategory": {{#quote}}{{{coursecategory}}}{{/quote}},
                 "showcoursecategory": {{#showcoursecategory}}true{{/showcoursecategory}}{{^showcoursecategory}}false{{/showcoursecategory}},
