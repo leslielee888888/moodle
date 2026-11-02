@@ -535,9 +535,13 @@ const renderCourses = (root, coursesData) => {
         if (Array.isArray(coursesData.courses) === false) {
             coursesData.courses = Object.values(coursesData.courses);
         }
-        // Whether the course category should be displayed in the course item.
-        coursesData.courses = coursesData.courses.map(course => {
+        // Whether the course category should be displayed in the course item. `islast` flags the
+        // final course so block_myoverview/view-cards-mds can put a comma after every course
+        // object but the last when it assembles its single JSON courses array (Mustache has no
+        // built-in way to omit a separator after the last item in a section).
+        coursesData.courses = coursesData.courses.map((course, index, courses) => {
             course.showcoursecategory = filters.displaycategories === 'on';
+            course.islast = index === courses.length - 1;
             return course;
         });
         if (coursesData.courses.length) {

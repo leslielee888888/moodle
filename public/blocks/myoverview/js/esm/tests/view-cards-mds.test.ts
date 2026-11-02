@@ -15,18 +15,20 @@
 
 /**
  * Guards block_myoverview's MDS cards view template (and the Course card skeleton partial it
- * includes) against stray Mustache braces.
+ * includes) against stray Mustache braces, and checks the single React mount point it renders
+ * (see GitHub issues #14 and #10, parent #11).
  *
- * This is a regression test for a real bug (see GitHub issue #8, fixed for issue #5): the cards
- * template's docblock once mentioned a literal "{{#react}}" tag. That tag's own closing braces
- * ended the Mustache comment early, and the rest of the docblock text was printed onto the
+ * This is also the regression test for a real bug (see GitHub issue #8, fixed for issue #5): the
+ * cards template's docblock once mentioned a literal "{{#react}}" tag. That tag's own closing
+ * braces ended the Mustache comment early, and the rest of the docblock text was printed onto the
  * dashboard, above the course grid.
  *
  * The template is rendered with the vendored core/mustache engine (public/lib/amd/src/mustache.js)
  * and ports of the repo's `quote`, `str` and `react` renderer helpers (see
  * ./mustacheTestHelpers.ts) - the same approach used for an earlier, unsaved Node+jsdom check of
- * this bug. It does not import @moodle/lms/core_course/CourseCard or any other
- * @moodlehq/design-system package, so the ESM-only Jest resolution problem does not apply.
+ * this bug. It does not import @moodle/lms/core_course/CourseCard, core_course/CourseCardList, or
+ * any other @moodlehq/design-system package, so the ESM-only Jest resolution problem does not
+ * apply.
  *
  * @module     block_myoverview/tests/view-cards-mds
  * @copyright  2026 Leslie Lee <leslielee888888@gmail.com>
@@ -70,6 +72,7 @@ const placeholderSource = fs.readFileSync(
 );
 
 const PARTIAL_NAME = "block_myoverview/placeholder-course-mds";
+const LIST_COMPONENT = "@moodle/lms/core_course/CourseCardList";
 
 /** A plain, well-behaved course - the baseline for checks that should produce clean output. */
 const plainCourseA = {
@@ -151,22 +154,37 @@ const hiddenCourse = {
 };
 
 /**
+ * Adds the `islast` flag block_myoverview/view.js computes for every course before rendering,
+ * which the template needs to separate the courses it writes into its single JSON array with
+ * commas (see the template's own docblock: Mustache has no "not last" primitive for a plain array
+ * section).
+ */
+function withIsLast(
+  courses: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  return courses.map((course, index, array) => ({
+    ...course,
+    islast: index === array.length - 1,
+  }));
+}
+
+/**
  * Renders block_myoverview/view-cards-mds with the given courses, using the vendored engine and
  * the ported quote/str/react helpers, and returns both the raw HTML and a parsed container to
  * query it with.
  */
 function renderCardsView(
-  courses: unknown[],
+  courses: Record<string, unknown>[],
   templateSource: string = viewCardsSource,
 ): { html: string; container: HTMLDivElement } {
-  const view = withRendererHelpers({courses});
-  const partials = {[PARTIAL_NAME]: placeholderSource};
+  const view = withRendererHelpers({ courses: withIsLast(courses) });
+  const partials = { [PARTIAL_NAME]: placeholderSource };
   const html = mustache.render(templateSource, view, partials).trim();
 
   const container = document.createElement("div");
   container.innerHTML = html;
 
-  return {html, container};
+  return { html, container };
 }
 
 /** Every non-whitespace text node in `root`, except those inside a ".visually-hidden" element. */
@@ -213,23 +231,64 @@ describe("block_myoverview/view-cards-mds and block_myoverview/placeholder-cours
       // closes right before its parent does (e.g. "...strings":{...}}" below), which is not a
       // stray brace leak. The real signal for a leak - visible text outside the grid, which is
       // exactly what the historical docblock bug produced - is checked via strayVisibleText.
-      const {container} = renderCardsView([plainCourseA, plainCourseB]);
+      const { container } = renderCardsView([plainCourseA, plainCourseB]);
 
       const grid = container.querySelector('[data-region="card-deck"]');
       expect(grid).not.toBeNull();
       expect(strayVisibleText(container)).toEqual([]);
     });
 
-    it("mounts one React root per course, inside the grid", () => {
-      const {container} = renderCardsView([plainCourseA, plainCourseB]);
+    it("mounts exactly one React root, carrying every course in its props", () => {
+      const { container } = renderCardsView([plainCourseA, plainCourseB]);
       const mounts = container.querySelectorAll("[data-react-component]");
 
-      expect(mounts).toHaveLength(2);
-      mounts.forEach((mount) => {
-        expect(mount.getAttribute("data-react-component")).toBe(
-          "@moodle/lms/core_course/CourseCard",
-        );
-        expect(mount.closest('[data-region="card-deck"]')).not.toBeNull();
+      expect(mounts).toHaveLength(1);
+      const mount = mounts[0];
+      expect(mount.getAttribute("data-react-component")).toBe(LIST_COMPONENT);
+
+      const props = JSON.parse(mount.getAttribute("data-react-props") ?? "{}");
+      expect(props.courses).toHaveLength(2);
+      expect(props.courses.map((course: { id: number }) => course.id)).toEqual([
+        11, 12,
+      ]);
+      // The courses array itself must be syntactically valid JSON (no missing/extra commas
+      // between the per-course objects); JSON.parse above already proves this, since props.courses
+      // would otherwise have failed to parse or come back malformed.
+    });
+
+    it("sends the shared strings once, at props.strings, not per course", () => {
+      const { container } = renderCardsView([plainCourseA, plainCourseB]);
+      const mount = container.querySelector("[data-react-component]");
+      const props = JSON.parse(mount?.getAttribute("data-react-props") ?? "{}");
+
+      expect(props.strings.continuelearning).toContain("continuelearning");
+      expect(props.strings.hiddenfromstudents).toContain("hiddenfromstudents");
+      expect(props.courses[0].strings).toBeUndefined();
+      expect(props.courses[0].continuelearning).toBeUndefined();
+    });
+
+    it("still fills in the per-course progress string from the existing exporter data", () => {
+      const { container } = renderCardsView([plainCourseA, plainCourseB]);
+      const mount = container.querySelector("[data-react-component]");
+      const props = JSON.parse(mount?.getAttribute("data-react-props") ?? "{}");
+
+      // PlainCourseA has progress; plainCourseB does not.
+      expect(props.courses[0].completepercent).toContain("completepercent");
+      expect(props.courses[1].completepercent).toBeNull();
+    });
+
+    it("renders one skeleton grid cell per course in the fallback content, inside the mount", () => {
+      const { container } = renderCardsView([plainCourseA, plainCourseB]);
+      const mount = container.querySelector("[data-react-component]");
+      expect(mount).not.toBeNull();
+
+      const grid = mount?.querySelector('[data-region="card-deck"]');
+      expect(grid).not.toBeNull();
+
+      const cells = mount?.querySelectorAll('[role="listitem"]') ?? [];
+      expect(cells).toHaveLength(2);
+      cells.forEach((cell) => {
+        expect(cell.querySelector(".mds-course-card-skeleton")).not.toBeNull();
       });
     });
   });
@@ -247,7 +306,7 @@ describe("block_myoverview/view-cards-mds and block_myoverview/placeholder-cours
       text.replace(/\{\{=<% %>=\}\}/g, "").replace(/<%=\{\{ \}\}=%>/g, "");
 
     it('parses as JSON and keeps quotes, "&", "<" and a backslash exactly intact', () => {
-      const {container} = renderCardsView([hostileCourse]);
+      const { container } = renderCardsView([hostileCourse]);
 
       const mount = container.querySelector("[data-react-component]");
       expect(mount).not.toBeNull();
@@ -256,36 +315,48 @@ describe("block_myoverview/view-cards-mds and block_myoverview/placeholder-cours
       expect(() => JSON.parse(propsJson)).not.toThrow();
 
       const props = JSON.parse(propsJson);
+      const course = props.courses[0];
 
-      expect(unshield(props.fullname)).toBe(hostileCourse.fullname);
-      expect(unshield(props.shortname)).toBe(hostileCourse.shortname);
-      expect(unshield(props.coursecategory)).toBe(hostileCourse.coursecategory);
+      expect(unshield(course.fullname)).toBe(hostileCourse.fullname);
+      expect(unshield(course.shortname)).toBe(hostileCourse.shortname);
+      expect(unshield(course.coursecategory)).toBe(
+        hostileCourse.coursecategory,
+      );
     });
 
     it('keeps "{{" and "}}" present (shielded, not dropped) in the JSON string value', () => {
-      const {container} = renderCardsView([hostileCourse]);
+      const { container } = renderCardsView([hostileCourse]);
+      const mount = container.querySelector("[data-react-component]");
+      const props = JSON.parse(mount?.getAttribute("data-react-props") ?? "{}");
+      const course = props.courses[0];
+
+      expect(course.fullname).toContain("{{");
+      expect(course.fullname).toContain("}}");
+    });
+
+    it("keeps the courses array valid JSON even as the single hostile course (also the last)", () => {
+      // HostileCourse is simultaneously the only and last course, so this exercises the comma
+      // (not-)separator with hostile data standing in the position most likely to break it.
+      const { container } = renderCardsView([plainCourseA, hostileCourse]);
       const mount = container.querySelector("[data-react-component]");
       const props = JSON.parse(mount?.getAttribute("data-react-props") ?? "{}");
 
-      expect(props.fullname).toContain("{{");
-      expect(props.fullname).toContain("}}");
+      expect(props.courses).toHaveLength(2);
+      expect(unshield(props.courses[1].fullname)).toBe(hostileCourse.fullname);
     });
   });
 
   describe("rendering edge-case progress and visibility", () => {
     it("keeps hasprogress-with-empty-progress and a hidden course as valid JSON", () => {
-      const {container} = renderCardsView([
+      const { container } = renderCardsView([
         emptyProgressCourse,
         hiddenCourse,
       ]);
-      const mounts = Array.from(
-        container.querySelectorAll("[data-react-component]"),
-      );
-      expect(mounts).toHaveLength(2);
+      const mount = container.querySelector("[data-react-component]");
+      expect(mount).not.toBeNull();
 
-      const [progressProps, hiddenProps] = mounts.map((mount) =>
-        JSON.parse(mount.getAttribute("data-react-props") ?? "{}"),
-      );
+      const props = JSON.parse(mount?.getAttribute("data-react-props") ?? "{}");
+      const [progressProps, hiddenProps] = props.courses;
 
       expect(progressProps.hasprogress).toBe(true);
       expect(progressProps.progress).toBe(0);
@@ -293,6 +364,19 @@ describe("block_myoverview/view-cards-mds and block_myoverview/placeholder-cours
       expect(hiddenProps.visible).toBe(false);
       expect(hiddenProps.hasprogress).toBe(false);
       expect(hiddenProps.progress).toBeNull();
+    });
+  });
+
+  describe("rendering with no courses", () => {
+    it("still mounts the single React root, with an empty courses array", () => {
+      const { container } = renderCardsView([]);
+      const mounts = container.querySelectorAll("[data-react-component]");
+
+      expect(mounts).toHaveLength(1);
+      const props = JSON.parse(
+        mounts[0].getAttribute("data-react-props") ?? "{}",
+      );
+      expect(props.courses).toEqual([]);
     });
   });
 
@@ -321,7 +405,7 @@ describe("block_myoverview/view-cards-mds and block_myoverview/placeholder-cours
 
     it("is also caught by rendering: the leaked docblock text appears outside the grid", () => {
       const buggySource = viewCardsSource.replace(knownGoodText, buggyText);
-      const {html, container} = renderCardsView([plainCourseA], buggySource);
+      const { html, container } = renderCardsView([plainCourseA], buggySource);
 
       expect(html).toContain("mount point");
       expect(strayVisibleText(container).join(" ")).toContain("mount point");
