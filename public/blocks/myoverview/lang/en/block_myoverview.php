@@ -50,6 +50,7 @@ $string['card'] = 'Card';
 $string['cards'] = 'Cards';
 $string['courseprogress'] = 'Course progress:';
 $string['completepercent'] = '{$a}% complete';
+$string['continuelearning'] = 'Continue learning';
 $string['createcourse'] = 'Create course';
 $string['customfield'] = 'Custom field';
 $string['customfiltergrouping'] = 'Field to use';

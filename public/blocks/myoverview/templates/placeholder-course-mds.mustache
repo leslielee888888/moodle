@@ -1,0 +1,41 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_myoverview/placeholder-course-mds
+
+    This template renders the Course card skeleton: a placeholder shaped like the MDS course card
+    (image, title, subtitle, progress bar and link lines). It is used as the loading placeholder of
+    the My courses cards view and as the fallback shown until the Course card wrapper mounts.
+    It carries no braces so it is safe inside a React mount point's fallback content.
+    Styles live in block_myoverview/styles.css.
+
+    Example context (json):
+    {}
+}}
+<div class="mds-course-card-skeleton w-100 h-100" aria-hidden="true">
+    <div class="mds-course-card-skeleton-image"></div>
+    <div class="mds-course-card-skeleton-content">
+        <div class="mds-course-card-skeleton-header">
+            <div class="mds-course-card-skeleton-text">
+                <div class="mds-course-card-skeleton-line mds-course-card-skeleton-title"></div>
+                <div class="mds-course-card-skeleton-line mds-course-card-skeleton-subtitle"></div>
+            </div>
+        </div>
+        <div class="mds-course-card-skeleton-line mds-course-card-skeleton-progress"></div>
+        <div class="mds-course-card-skeleton-line mds-course-card-skeleton-link"></div>
+    </div>
+</div>

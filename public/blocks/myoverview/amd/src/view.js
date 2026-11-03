@@ -36,10 +36,34 @@ import {setUserPreference} from 'core_user/repository';
 
 const TEMPLATES = {
     COURSES_CARDS: 'block_myoverview/view-cards',
+    COURSES_CARDS_MDS: 'block_myoverview/view-cards-mds',
     COURSES_LIST: 'block_myoverview/view-list',
     COURSES_SUMMARY: 'block_myoverview/view-summary',
     NOCOURSES: 'core_course/no-courses'
 };
+
+/**
+ * The name of the cookie that switches the cards view back to the legacy Course card.
+ *
+ * Proof of concept (see GitHub issues #1 and #3): the MDS course card is the default; there is no
+ * UI for this cookie, it is set by hand to opt back into the legacy card. Easily removed by
+ * deleting this check and the COURSES_CARDS branch in renderCourses() once the POC is reverted or
+ * promoted.
+ *
+ * @type {string}
+ */
+const MDS_COURSECARD_COOKIE = 'mds_coursecard';
+
+/**
+ * Whether the MDS course card cookie switch is turned off.
+ *
+ * @return {Boolean} True when the mds_coursecard cookie is set to exactly "0". Any other value,
+ * including the cookie being absent, leaves the MDS course card on.
+ */
+const isMdsCourseCardDisabled = () => document.cookie
+    .split(';')
+    .map(part => part.trim())
+    .includes(`${MDS_COURSECARD_COOKIE}=0`);
 
 const GROUPINGS = {
     GROUPING_ALLINCLUDINGHIDDEN: 'allincludinghidden',
@@ -497,7 +521,7 @@ const renderCourses = (root, coursesData) => {
 
     let currentTemplate = '';
     if (filters.display === 'card') {
-        currentTemplate = TEMPLATES.COURSES_CARDS;
+        currentTemplate = isMdsCourseCardDisabled() ? TEMPLATES.COURSES_CARDS : TEMPLATES.COURSES_CARDS_MDS;
     } else if (filters.display === 'list') {
         currentTemplate = TEMPLATES.COURSES_LIST;
     } else {
@@ -511,9 +535,13 @@ const renderCourses = (root, coursesData) => {
         if (Array.isArray(coursesData.courses) === false) {
             coursesData.courses = Object.values(coursesData.courses);
         }
-        // Whether the course category should be displayed in the course item.
-        coursesData.courses = coursesData.courses.map(course => {
+        // Whether the course category should be displayed in the course item. `islast` flags the
+        // final course so block_myoverview/view-cards-mds can put a comma after every course
+        // object but the last when it assembles its single JSON courses array (Mustache has no
+        // built-in way to omit a separator after the last item in a section).
+        coursesData.courses = coursesData.courses.map((course, index, courses) => {
             course.showcoursecategory = filters.displaycategories === 'on';
+            course.islast = index === courses.length - 1;
             return course;
         });
         if (coursesData.courses.length) {
