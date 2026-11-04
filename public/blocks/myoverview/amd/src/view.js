@@ -37,6 +37,7 @@ import {setUserPreference} from 'core_user/repository';
 const TEMPLATES = {
     COURSES_CARDS: 'block_myoverview/view-cards',
     COURSES_CARDS_MDS: 'block_myoverview/view-cards-mds',
+    COURSES_CARDS_MDS_CE: 'block_myoverview/view-cards-mds-ce',
     COURSES_LIST: 'block_myoverview/view-list',
     COURSES_SUMMARY: 'block_myoverview/view-summary',
     NOCOURSES: 'core_course/no-courses'
@@ -55,15 +56,41 @@ const TEMPLATES = {
 const MDS_COURSECARD_COOKIE = 'mds_coursecard';
 
 /**
- * Whether the MDS course card cookie switch is turned off.
+ * The name of the cookie that, on top of mds_coursecard, selects the Course card list element
+ * (the mds-course-card-list custom element) instead of the react mustache helper.
  *
- * @return {Boolean} True when the mds_coursecard cookie is set to exactly "0". Any other value,
- * including the cookie being absent, leaves the MDS course card on.
+ * It is off unless set to exactly "1". There is no UI for it, it is set by hand.
+ *
+ * @type {string}
  */
-const isMdsCourseCardDisabled = () => document.cookie
-    .split(';')
-    .map(part => part.trim())
-    .includes(`${MDS_COURSECARD_COOKIE}=0`);
+const MDS_COURSECARD_CE_COOKIE = 'mds_coursecard_ce';
+
+/**
+ * The module that defines the Course card list element.
+ *
+ * @type {string}
+ */
+const COURSE_CARD_LIST_ELEMENT_MODULE = 'core/esm!@moodle/lms/core_course/CourseCardListElement';
+
+/**
+ * Choose the template of the cards view from the cookies.
+ *
+ * - mds_coursecard exactly "0": the legacy Course card, whatever mds_coursecard_ce says.
+ * - otherwise mds_coursecard_ce exactly "1": the Course card list element.
+ * - otherwise: the MDS course card through the react mustache helper.
+ *
+ * @return {String} The template name.
+ */
+const getCardsTemplate = () => {
+    const cookies = document.cookie.split(';').map(part => part.trim());
+    if (cookies.includes(`${MDS_COURSECARD_COOKIE}=0`)) {
+        return TEMPLATES.COURSES_CARDS;
+    }
+    if (cookies.includes(`${MDS_COURSECARD_CE_COOKIE}=1`)) {
+        return TEMPLATES.COURSES_CARDS_MDS_CE;
+    }
+    return TEMPLATES.COURSES_CARDS_MDS;
+};
 
 const GROUPINGS = {
     GROUPING_ALLINCLUDINGHIDDEN: 'allincludinghidden',
@@ -521,7 +548,12 @@ const renderCourses = (root, coursesData) => {
 
     let currentTemplate = '';
     if (filters.display === 'card') {
-        currentTemplate = isMdsCourseCardDisabled() ? TEMPLATES.COURSES_CARDS : TEMPLATES.COURSES_CARDS_MDS;
+        currentTemplate = getCardsTemplate();
+        if (currentTemplate === TEMPLATES.COURSES_CARDS_MDS_CE) {
+            // Only define the element when it is used. The browser upgrades the element when it is defined,
+            // so it does not matter whether the template is inserted before or after this finishes.
+            require([COURSE_CARD_LIST_ELEMENT_MODULE], () => null);
+        }
     } else if (filters.display === 'list') {
         currentTemplate = TEMPLATES.COURSES_LIST;
     } else {

@@ -20,6 +20,10 @@ _Avoid_: New card, design system card
 The Moodle-side adapter that accepts Moodle course data and presents it as an MDS course card.
 _Avoid_: Adapter, mapper
 
+**Course card list element**:
+The opt-in custom element that shows the MDS course cards for My courses as one grid, instead of the cards being mounted by the React template helper.
+_Avoid_: Web component, card grid element
+
 **Course card skeleton**:
 The placeholder shown in place of an MDS course card until it is ready, matching its size and layout.
 _Avoid_: Loader, spinner, fallback card

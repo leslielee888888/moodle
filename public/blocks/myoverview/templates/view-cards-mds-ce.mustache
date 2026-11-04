@@ -1,0 +1,104 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_myoverview/view-cards-mds-ce
+
+    MDS course card variant of the cards view, delivered as the Course card list element
+    (the mds-course-card-list custom element) instead of through the react mustache helper.
+    block_myoverview/view.js picks this template when the mds_coursecard cookie is not "0" and
+    the mds_coursecard_ce cookie is exactly "1".
+
+    All the courses travel in one single-quoted "courses" attribute holding a JSON array. The
+    single quotes matter: the quote helper JSON-encodes a string but does not escape the single
+    quote. Every value inside the JSON therefore uses double braces, which HTML-escape the single
+    quote, the double quote, the ampersand and the angle brackets; the browser decodes them again
+    before the element parses the JSON. The shared strings are separate attributes. The progress
+    label is one shared template containing the placeholder %PROGRESS%, which the element fills
+    in per course, so no language string ends up inside the single-quoted attribute.
+
+    Mustache has no built-in way to separate repeated items in a JSON array with commas: each
+    course carries an islast flag (set by block_myoverview/view.js) so every course but the last
+    is followed by a comma.
+
+    The element's fallback content is a static grid of Course card skeletons, one per course,
+    shown until the element mounts and replaces it. It is aria-hidden, and a visually hidden
+    loading message immediately precedes the element.
+
+    Example context (json):
+    {
+        "courses": [
+            {
+                "id": 2,
+                "viewurl": "https://moodlesite/course/view.php?id=2",
+                "courseimage": "https://moodlesite/pluginfile/123/course/overviewfiles/123.jpg",
+                "fullname": "Course 3 for \"Statistical and Computational Tools\" ",
+                "shortname": "stats3",
+                "hasprogress": true,
+                "progress": 10,
+                "coursecategory": "Category 1",
+                "showcoursecategory": true,
+                "showshortname": false,
+                "visible": true,
+                "islast": false
+            },
+            {
+                "id": 3,
+                "viewurl": "https://moodlesite/course/view.php?id=3",
+                "courseimage": "https://moodlesite/pluginfile/124/course/overviewfiles/124.jpg",
+                "fullname": "Introduction to Hidden Courses",
+                "shortname": "hidden1",
+                "hasprogress": false,
+                "progress": null,
+                "coursecategory": "Category 2",
+                "showcoursecategory": true,
+                "showshortname": false,
+                "visible": false,
+                "islast": true
+            }
+        ]
+    }
+}}
+<span class="visually-hidden">{{#str}} loading {{/str}}</span>
+<mds-course-card-list
+    continuelearning="{{#str}}continuelearning, block_myoverview{{/str}}"
+    hiddenfromstudents="{{#str}}hiddenfromstudents{{/str}}"
+    completepercent="{{#str}}completepercent, block_myoverview, %PROGRESS%{{/str}}"
+    courses='[
+    {{#courses}}
+        {
+            "id": {{id}},
+            "fullname": {{#quote}}{{fullname}}{{/quote}},
+            "shortname": {{#quote}}{{shortname}}{{/quote}},
+            "viewurl": {{#quote}}{{viewurl}}{{/quote}},
+            "courseimage": {{#quote}}{{courseimage}}{{/quote}},
+            "hasprogress": {{#hasprogress}}true{{/hasprogress}}{{^hasprogress}}false{{/hasprogress}},
+            "progress": {{^hasprogress}}null{{/hasprogress}}{{#hasprogress}}{{^progress}}0{{/progress}}{{#progress}}{{progress}}{{/progress}}{{/hasprogress}},
+            "visible": {{#visible}}true{{/visible}}{{^visible}}false{{/visible}},
+            "coursecategory": {{#quote}}{{coursecategory}}{{/quote}},
+            "showcoursecategory": {{#showcoursecategory}}true{{/showcoursecategory}}{{^showcoursecategory}}false{{/showcoursecategory}},
+            "showshortname": {{#showshortname}}true{{/showshortname}}{{^showshortname}}false{{/showshortname}}
+        }{{^islast}},{{/islast}}
+    {{/courses}}
+    ]'>
+    <div class="card-grid row gx-2 row-cols-1 row-cols-sm-2 row-cols-lg-3" data-region="card-deck" role="list">
+    {{#courses}}
+        <div class="col d-flex mb-2" role="listitem">
+            {{> block_myoverview/placeholder-course-mds }}
+        </div>
+    {{/courses}}
+    </div>
+</mds-course-card-list>

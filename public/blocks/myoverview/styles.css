@@ -114,3 +114,7 @@
         background-color: var(--mds-bg-surface-strong);
     }
 }
+
+.block_myoverview mds-course-card-list {
+    display: block;
+}
